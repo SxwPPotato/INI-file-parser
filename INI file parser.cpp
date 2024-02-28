@@ -19,7 +19,59 @@ private:
 
     int count = 0;
 
+    std::string get_value_string(std::string section, std::string var) {
+        std::string el = "";
+        for (int i = 0; i < file_cont.size() - 1; i++) {
+
+            if (file_cont[i] == '[' + section + ']') {
+                
+                i++;
+                while (file_cont[i] != "") {
+                    str = "";
+                    str = str + file_cont[i][0] + file_cont[i][1] + file_cont[i][2] + file_cont[i][3];
+
+                    if (str == var)
+                    {
+                        el = "";
+                        count = 0;
+                        count = str.size() + 3;
+                        while (file_cont[i][count] != NULL) {
+                            if (file_cont[i][count] == '.') {
+                                el = el + ',';
+                                count++;
+                            }
+                            else {
+                                el = el + file_cont[i][count];
+                                count++;
+                            }
+                        }
+                        val_err = false;
+                    }
+                    if (i < file_cont.size() - 1) {
+                        i++;
+                    }
+                    else break;
+
+                }
+                section_error = false;
+            }
+
+        }
+        if (section_error == true) throw std::runtime_error("Данной секции не существует");
+        else if (val_err == true) throw std::runtime_error("Данной переменной не существует");
+        return el;
+    }
+
+
 public:
+
+    template<class T>
+    T get_value(std::string section, std::string var) {
+        static_assert(sizeof(T) == -1, "not implemented type for get_value");
+    }
+
+
+
     ini_parser(std::string fname) {
         file.open(fname + ".ini");
         if (file.is_open())
@@ -46,84 +98,7 @@ public:
         else {
             throw std::runtime_error("Не удалось открыть файл");
         }
-    }
-
-    template<class T>
-    T get_value(std::string section_name, std::string val_name) {
-        T el = 0;
-        for (int i = 0; i < file_cont.size() - 1 ; i++) {
-
-            if (file_cont[i] == '[' + section_name + ']') {
-                el = 0;
-                i++;
-                while (file_cont[i] != "") {
-                    str = "";
-                    str = str + file_cont[i][0] + file_cont[i][1] + file_cont[i][2] + file_cont[i][3];
-
-                    if (str  == val_name)
-                    {
-                        count = 0;
-                        count = str.size() + 3;
-                        str = "";
-                        while (file_cont[i][count] != NULL) {
-                            str = str + file_cont[i][count];
-                            count++;
-                        }
-                        el += std::stof(str);
-                        val_err = false;
-                    }
-                    if (i < file_cont.size() - 1) {
-                        i++;
-                    }
-                    else break;
-
-                }
-                section_error = false;
-            }
-
-        }
-        if (section_error == true) throw std::runtime_error("Данной секции не существует");
-        else if(val_err == true) throw std::runtime_error("Данной переменной не существует");
-            return el;
-    }
-
-    template<>
-    std::string get_value(std::string section_name, std::string val_name) {
-        std::string str2 = "";
-        for (int i = 0; i < file_cont.size(); i++) {
-
-            if (file_cont[i] == '[' + section_name + ']') {
-                i++;
-                while (file_cont[i] != "") {
-                    str = "";
-                    str = str + file_cont[i][0] + file_cont[i][1] + file_cont[i][2] + file_cont[i][3];
-
-                    if (str == val_name)
-                    {
-                        count = str.size() + 3;
-                        str = "";
-                        while (file_cont[i][count] != NULL) {
-                            str = str + file_cont[i][count];
-                            count++;
-                        }
-
-                        str2 += str;
-                        val_err = false;
-                    }
-                    if (i < file_cont.size() - 1) {
-                        i++;
-                    }
-                    else break;
-
-                }
-                section_error = false;
-            } 
-
-        }
-        if(section_error == true) throw std::runtime_error("Данной секции не существует");
-        else if (val_err == true) throw std::runtime_error("Данной переменной не существует");
-        return str2;
-    }
+    } 
 
     ~ini_parser() {
         file.close();
@@ -131,6 +106,26 @@ public:
     }
 
 };
+
+
+template<>
+std::string ini_parser::get_value(std::string section, std::string var) {
+    return get_value_string(section, var);
+}
+
+template<>
+int ini_parser::get_value(std::string section, std::string var) {
+    std::string str_val = get_value_string(section, var);
+
+    return stoi(str_val);
+}
+
+template<>
+float ini_parser::get_value(std::string section, std::string var) {
+    std::string str_val = get_value_string(section, var);
+
+    return stof(str_val);
+}
 
 
 int main()
@@ -177,6 +172,11 @@ int main()
             auto el = parser.get_value<std::string>(section, var);
             std::cout << "\n" << "Найден элемент: " << el << std::endl;
         }
+
+        std::cout << "\nTest section\n";
+        std::cout << parser.get_value<float>("Section1", "var1") << std::endl;
+        std::cout << parser.get_value<int>("Section1", "var1") << std::endl;
+        std::cout << parser.get_value<std::string>("Section1", "var2") << std::endl;
     }
     catch(const std::exception& ex) {
         std::cout << ex.what() << std::endl;
