@@ -4,6 +4,7 @@
 #include<Windows.h>
 #include <string>
 #include <vector>
+#include <map>
 
 class ini_parser {
 private:
@@ -11,6 +12,8 @@ private:
     std::string q;
     
     std::vector<std::string> file_cont;
+
+    std::map<std::string, std::string> map_string;
 
     std::string str = "";// элемент для строк
     std::string str2 = "";
@@ -21,10 +24,17 @@ private:
 
     std::string get_value_string(std::string section, std::string var) {
         std::string el = "";
+        if (!map_string.empty() ) {
+            if (map_string.find(var) != map_string.end()) {
+                return map_string[var];
+            }
+
+        }
+       
         for (int i = 0; i < file_cont.size() - 1; i++) {
 
             if (file_cont[i] == '[' + section + ']') {
-                
+
                 i++;
                 while (file_cont[i] != "") {
                     str = "";
@@ -38,6 +48,7 @@ private:
                         while (file_cont[i][count] != NULL) {
                             if (file_cont[i][count] == '.') {
                                 el = el + ',';
+
                                 count++;
                             }
                             else {
@@ -45,6 +56,7 @@ private:
                                 count++;
                             }
                         }
+
                         val_err = false;
                     }
                     if (i < file_cont.size() - 1) {
@@ -57,8 +69,12 @@ private:
             }
 
         }
+        
         if (section_error == true) throw std::runtime_error("Данной секции не существует");
         else if (val_err == true) throw std::runtime_error("Данной переменной не существует");
+
+        map_string[var] = el;
+
         return el;
     }
 
@@ -138,7 +154,7 @@ int main()
         std::string section = "";
         std::string var = "";
 
-        std::cout << "Введите название файла из перечисленных: \nfile\n";
+      /*  std::cout << "Введите название файла из перечисленных: \nfile\n";
         std::cin >> name_file;
         ini_parser parser(name_file);
 
@@ -171,11 +187,15 @@ int main()
         else {
             auto el = parser.get_value<std::string>(section, var);
             std::cout << "\n" << "Найден элемент: " << el << std::endl;
-        }
+        }*/
 
         std::cout << "\nTest section\n";
+
+        ini_parser parser("file");
+
         std::cout << parser.get_value<float>("Section1", "var1") << std::endl;
         std::cout << parser.get_value<int>("Section1", "var1") << std::endl;
+        std::cout << parser.get_value<std::string>("Section1", "var2") << std::endl;
         std::cout << parser.get_value<std::string>("Section1", "var2") << std::endl;
     }
     catch(const std::exception& ex) {
